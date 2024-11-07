@@ -1,0 +1,38 @@
+---
+- name: Configurer les mises à jour automatiques et le fuseau horaire
+  hosts: linux
+  become: yes
+  vars_files:
+    - vault/credentials.yml
+  
+  tasks:
+    - name: Copier le fichier de configuration APT depuis le serveur Ansible
+      ansible.builtin.copy:
+        src: "/etc/apt/apt.conf.d/20auto-upgrades"  # Chemin du fichier local sur votre serveur Ansible
+        dest: "/etc/apt/apt.conf.d/20auto-upgrades"
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - Redémarrer les timers apt-daily
+
+    - name: Mettre à jour le fuseau horaire pour le synchroniser avec le serveur Ansible
+      ansible.builtin.timezone:
+        name: "{{ ansible_date_time.tz }}"  # Utilise le fuseau horaire du serveur Ansible
+
+    - name: Redémarrer les timers apt-daily et apt-daily-upgrade
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - apt-daily.timer
+        - apt-daily-upgrade.timer
+
+  handlers:
+    - name: Redémarrer les timers apt-daily
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - apt-daily.timer
+        - apt-daily-upgrade.timer
