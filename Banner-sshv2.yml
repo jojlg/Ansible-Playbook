@@ -3,6 +3,9 @@
   hosts: linux
   become: yes
 
+  vars_files:
+    - vault/credentials.yml
+
   tasks:
     - name: Installer OpenSSH server
       apt:
@@ -40,11 +43,25 @@
           *  extent of the law.                                  *
           ********************************************************
 
+    - name: Vérifier et définir les permissions correctes pour le fichier de bannière
+      file:
+        path: /etc/ssh/banner
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Activer la bannière dans la configuration SSH
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^#?Banner'
         line: 'Banner /etc/ssh/banner'
+        state: present
+
+    - name: Désactiver PrintMotd pour activer la bannière SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PrintMotd'
+        line: 'PrintMotd no'
         state: present
 
     - name: Vérifier la syntaxe de la configuration SSH
@@ -57,8 +74,25 @@
         msg: "Erreur de syntaxe dans /etc/ssh/sshd_config. Veuillez vérifier et corriger."
       when: ssh_syntax_check.rc != 0
 
+    - name: Vérifier la configuration effective de SSH avec sshd -T
+      command: sshd -T
+      register: ssh_config_check
+      changed_when: false
+
+    - name: Afficher la configuration SSH
+      debug:
+        var: ssh_config_check.stdout
+
+    - name: Recharger les services système pour prendre en compte les changements
+      command: systemctl restart ssh
+
   handlers:
-    - name: Redémarrer le service SSH
+    - name: Redémarrer le service SSH avec pause pour appliquer les modifications
       service:
         name: ssh
         state: restarted
+      notify: Pause après redémarrage SSH
+
+    - name: Pause après redémarrage SSH
+      pause:
+        seconds: 5
