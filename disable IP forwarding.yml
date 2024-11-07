@@ -1,0 +1,42 @@
+---
+- name: Correctif de sécurité | Mise à jour paquet | Unattended-upgrade | Forwarding
+  hosts: linux
+  vars_files:
+    - vault/credentials.yml
+  become: True
+  tasks:
+
+
+##Redirection de flux
+    - name: Désactiver IP forwarding pour IPv4
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '0'
+        state: present
+        reload: yes
+
+    - name: Désactiver IP forwarding pour IPv6
+      sysctl:
+        name: net.ipv6.conf.all.forwarding
+        value: '0'
+        state: present
+        reload: yes
+
+    - name: Assurer que les changements sont persistants après redémarrage pour IPv4
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^net.ipv4.ip_forward'
+        line: 'net.ipv4.ip_forward = 0'
+        state: present
+
+    - name: Assurer que les changements sont persistants après redémarrage pour IPv6
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^net.ipv6.conf.all.forwarding'
+        line: 'net.ipv6.conf.all.forwarding = 0'
+        state: present
+
+    - name: Recharger la configuration sysctl
+      command: sysctl -p
+      args:
+        warn: no
