@@ -1,0 +1,56 @@
+---
+- name: Installer et configurer Fail2Ban sur l'hôte distant
+  hosts: linux  # Remplacez 'your_host_group' par le groupe d'hôtes cible ou l'adresse de votre hôte distant.
+  become: yes   # Ajout de l'élévation de privilèges
+  vars_files:
+    - vault/credentials.yml
+
+  tasks:
+    - name: Mettre à jour les paquets système
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Installer fail2ban
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Démarrer et activer fail2ban
+      systemd:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    - name: Copier le fichier de configuration fail2ban
+      copy:
+        src: /etc/fail2ban/jail.local
+        dest: /etc/fail2ban/jail.local
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+        - Redémarrer fail2ban
+
+    - name: Activer le filtre SSH dans fail2ban
+      lineinfile:
+        path: /etc/fail2ban/jail.local
+        regexp: '^#enabled = false'
+        line: 'enabled = true'
+        create: yes
+
+    - name: Configurer le temps de bannissement, les tentatives max et le délai
+      blockinfile:
+        path: /etc/fail2ban/jail.local
+        block: |
+          bantime = 3600    # 1 heure de bannissement
+          maxretry = 5      # 5 tentatives de connexion échouées
+          findtime = 600    # Temps de 10 minutes pour les tentatives de connexion
+      notify:
+        - Redémarrer fail2ban
+
+  handlers:
+    - name: Redémarrer fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
