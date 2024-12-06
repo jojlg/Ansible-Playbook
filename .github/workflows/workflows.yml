@@ -1,8 +1,9 @@
 name: CI Pipeline
 
 jobs:
-  build:
+  deploy-ansible:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: ping
+    - run: ansible-playbook -i /home/ansible/devops-project/hosts /home/ansible/devops-project/test.yml --ask-vault-pass
