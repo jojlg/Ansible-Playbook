@@ -1,5 +1,7 @@
 name: CI Pipeline
 
+on: [push]
+
 jobs:
   deploy-ansible:
     runs-on: ubuntu-latest
