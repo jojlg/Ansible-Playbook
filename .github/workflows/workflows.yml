@@ -8,5 +8,8 @@ jobs:
 
     steps:
 
-    - name: ping
-      run: ansible-playbook -i /home/ansible/devops-project/hosts /home/ansible/devops-project/ping.yml --ask-vault-pass
+    - name: création fichier vault password
+      run: echo "${{ secrets.Vault }}" > /home/ansible/devops-project/vault_password.txt
+
+    - name: playbook ping
+      run: ansible-playbook -i /home/ansible/devops-project/hosts /home/ansible/devops-project/ping.yml --vault-password-file /home/ansible/devops-project/vault_password.txt
