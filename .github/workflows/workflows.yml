@@ -4,15 +4,15 @@ on: [push]
 
 jobs:
   deploy-ansible:
-    runs-on: ubuntu-latest
+    runs-on: seft-hosted
 
     steps:
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+ #   - name: Set up SSH
+  #    run: |
+#        mkdir -p ~/.ssh
+#        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+#        chmod 600 ~/.ssh/id_rsa
+#        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
     - name: ping
       run: ping -c 5 192.168.1.200
