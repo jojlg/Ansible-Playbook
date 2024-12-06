@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   deploy-ansible:
-    runs-on: seft-hosted
+    runs-on: self-hosted
 
     steps:
  #   - name: Set up SSH
