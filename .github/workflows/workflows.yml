@@ -15,6 +15,6 @@ jobs:
         ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
     - name: ping
-      run: ssh -i ~/.ssh/id_rsa ansible@192.168.1.200 "ls /home/ansible"
+      #run: ssh -i ~/.ssh/id_rsa ansible@192.168.1.200 "ls /home/ansible"
 
 #test
