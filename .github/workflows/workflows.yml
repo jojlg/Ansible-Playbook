@@ -6,4 +6,4 @@ jobs:
 
     steps:
     - name: ping
-    - run: ansible-playbook -i /home/ansible/devops-project/hosts /home/ansible/devops-project/test.yml --ask-vault-pass
+      run: ansible-playbook -i /home/ansible/devops-project/hosts /home/ansible/devops-project/test.yml --ask-vault-pass
