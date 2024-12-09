@@ -1,56 +1,53 @@
 ---
-- name: Installer et configurer Fail2Ban sur l'hôte distant
-  hosts: linux  # Remplacez 'your_host_group' par le groupe d'hôtes cible ou l'adresse de votre hôte distant.
-  become: yes   # Ajout de l'élévation de privilèges
-  vars_files:
-    - vault/credentials.yml
-
+- name: Installer et configurer Fail2Ban sur les machines Ubuntu
+  hosts: all
+  become: yes
   tasks:
-    - name: Mettre à jour les paquets système
+    - name: Mettre à jour les paquets
       apt:
         update_cache: yes
-        upgrade: dist
 
-    - name: Installer fail2ban
+    - name: Installer Fail2Ban et iptables
       apt:
-        name: fail2ban
+        name:
+          - fail2ban
+          - iptables
         state: present
+        update_cache: yes
 
-    - name: Démarrer et activer fail2ban
-      systemd:
-        name: fail2ban
-        state: started
-        enabled: yes
-
-    - name: Copier le fichier de configuration fail2ban
+    - name: Copier le fichier de configuration Fail2Ban (jail.conf -> jail.local)
       copy:
-        src: /etc/fail2ban/jail.local
+        remote_src: yes
+        src: /etc/fail2ban/jail.conf
         dest: /etc/fail2ban/jail.local
-        owner: root
-        group: root
-        mode: '0644'
-      notify:
-        - Redémarrer fail2ban
+        force: no  # Ne pas écraser si le fichier existe déjà
 
-    - name: Activer le filtre SSH dans fail2ban
+    - name: Modifier le backend de Fail2Ban pour utiliser systemd
       lineinfile:
         path: /etc/fail2ban/jail.local
-        regexp: '^#enabled = false'
-        line: 'enabled = true'
-        create: yes
+        regexp: '^backend = .*'
+        line: 'backend = systemd'
 
-    - name: Configurer le temps de bannissement, les tentatives max et le délai
-      blockinfile:
-        path: /etc/fail2ban/jail.local
-        block: |
-          bantime = 3600    # 1 heure de bannissement
-          maxretry = 5      # 5 tentatives de connexion échouées
-          findtime = 600    # Temps de 10 minutes pour les tentatives de connexion
-      notify:
-        - Redémarrer fail2ban
-
-  handlers:
-    - name: Redémarrer fail2ban
+    - name: Redémarrer le service Fail2Ban
       systemd:
         name: fail2ban
         state: restarted
+        enabled: yes
+
+    - name: Vérifier le statut du service Fail2Ban
+      shell: systemctl status fail2ban.service
+      register: fail2ban_status
+      changed_when: false
+
+    - name: Afficher le statut du service Fail2Ban
+      debug:
+        var: fail2ban_status.stdout_lines
+
+    - name: Vérifier le statut de la jail SSHD
+      shell: fail2ban-client status sshd
+      register: fail2ban_client_status
+      changed_when: false
+
+    - name: Afficher le statut de la jail SSHD
+      debug:
+        var: fail2ban_client_status.stdout_lines
