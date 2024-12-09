@@ -1,8 +1,33 @@
 ---
-- name: Installer et configurer Fail2Ban sur les machines Ubuntu
-  hosts: all
+- name: Configurer la sécurité des serveurs Linux
+  hosts: linux
   become: yes
+  vars_files:
+    - vault/credentials.yml
+
   tasks:
+    # --- Section 1 : Désactivation de la connexion root via SSH ---
+    - name: Vérifier si le fichier de configuration SSH existe
+      stat:
+        path: /etc/ssh/sshd_config
+      register: ssh_config
+
+    - name: Avertir si le fichier de configuration SSH est introuvable
+      debug:
+        msg: "Le fichier de configuration /etc/ssh/sshd_config est introuvable."
+      when: not ssh_config.stat.exists
+      failed_when: not ssh_config.stat.exists
+
+    - name: Désactiver la connexion root via SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+      notify:
+        - Restart SSH service
+
+    # --- Section 2 : Installation et configuration de Fail2Ban ---
     - name: Mettre à jour les paquets
       apt:
         update_cache: yes
@@ -51,3 +76,10 @@
     - name: Afficher le statut de la jail SSHD
       debug:
         var: fail2ban_client_status.stdout_lines
+
+  handlers:
+    - name: Restart SSH service
+      systemd:
+        name: ssh
+        state: restarted
+        enabled: yes
