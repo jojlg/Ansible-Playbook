@@ -7,12 +7,6 @@
     - vault/credentials.yml
 
   tasks:
-    - name: Installer OpenSSH server
-      apt:
-        name: openssh-server
-        state: present
-        update_cache: yes
-
     - name: Configurer SSH pour utiliser uniquement le protocole SSHv2
       lineinfile:
         path: /etc/ssh/sshd_config
